@@ -1,0 +1,37 @@
+name: Frontend CI - DurvalCRM App
+
+# Gatilhos: roda em pushes para a branch 'develop' e qualquer branch 'feature/*'
+on:
+  push:
+    branches: [ develop, 'feature/*' ]
+
+jobs:
+  # Nome do job
+  build-and-lint:
+    # Máquina virtual que será usada
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Faz o checkout do código
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Configura o ambiente Node.js (versão 20)
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          # Adiciona cache para as dependências do npm, acelerando builds futuros
+          cache: 'npm'
+
+      # 3. Instala as dependências de forma otimizada para CI
+      - name: Install dependencies
+        run: npm ci
+
+      # 4. Executa o linter para verificar a qualidade do código
+      - name: Run linter
+        run: npm run lint
+
+      # 5. Realiza o build do projeto para garantir que ele é "compilável"
+      - name: Build application
+        run: npm run build
