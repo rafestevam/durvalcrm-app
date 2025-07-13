@@ -2,7 +2,7 @@ import axios from 'axios';
 import type { KeycloakInstance } from 'keycloak-js';
 
 const apiClient = axios.create({
-  baseURL: 'http://localhost:8088/api', // URL base da sua API Quarkus
+  baseURL: 'http://localhost:8082/', // URL base da sua API Quarkus
   headers: {
     'Content-Type': 'application/json',
   },
