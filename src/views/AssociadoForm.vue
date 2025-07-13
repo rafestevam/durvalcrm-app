@@ -1,79 +1,106 @@
 <template>
-  <div class="p-8">
-    <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ pageTitle }}</h1>
-    <router-link :to="{ name: 'Associados' }" class="text-blue-500 hover:underline mb-6 block">
-      &lt; Voltar para a lista
-    </router-link>
+  <div>
+    <h1 class="text-2xl font-bold mb-2">{{ isEditing ? 'Editar Associado' : 'Adicionar Novo Associado' }}</h1>
+    <router-link to="/associados" class="text-blue-500 hover:underline mb-6 block">&lt; Voltar para a lista</router-link>
 
-    <div class="bg-white p-8 rounded-lg shadow-lg">
-      <form @submit.prevent="handleSubmit">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div class="col-span-2">
-            <label for="nome" class="block text-sm font-bold text-gray-600 mb-2">Nome Completo</label>
-            <input v-model="form.nome_completo" type="text" id="nome" class="w-full input-style" required />
-          </div>
-          <div>
-            <label for="cpf" class="block text-sm font-bold text-gray-600 mb-2">CPF</label>
-            <input v-model="form.cpf" type="text" id="cpf" class="w-full input-style" required />
-          </div>
-          <div>
-            <label for="email" class="block text-sm font-bold text-gray-600 mb-2">E-mail</label>
-            <input v-model="form.email" type="email" id="email" class="w-full input-style" required />
-          </div>
-          <div>
-            <label for="telefone" class="block text-sm font-bold text-gray-600 mb-2">Telefone</label>
-            <input v-model="form.telefone" type="text" id="telefone" class="w-full input-style" />
-          </div>
-        </div>
-
-        <div class="mt-8 flex justify-end">
-          <button type="submit" class="bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-500 transition-colors">
-            Salvar
-          </button>
-        </div>
-      </form>
+    <div v-if="errorMessage" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+        <strong class="font-bold">Ocorreu um erro!</strong>
+        <span class="block sm:inline">{{ errorMessage }}</span>
     </div>
+
+    <form @submit.prevent="handleSubmit" class="p-8 bg-white rounded-lg shadow-md">
+        <div class="mb-4">
+            <label for="nome" class="block text-gray-700 font-bold mb-2">Nome Completo</label>
+            <input type="text" v-model="form.nomeCompleto" id="nome" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required :disabled="isLoading">
+        </div>
+        <div class="mb-4">
+            <label for="cpf" class="block text-gray-700 font-bold mb-2">CPF</label>
+            <input type="text" v-model="form.cpf" id="cpf" v-maska data-maska="'###.###.###-##'" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required :disabled="isLoading" placeholder="111.222.333-44">
+        </div>
+        <div class="mb-4">
+            <label for="email" class="block text-gray-700 font-bold mb-2">E-mail</label>
+            <input type="email" v-model="form.email" id="email" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required :disabled="isLoading">
+        </div>
+        <div class="mb-6">
+            <label for="telefone" class="block text-gray-700 font-bold mb-2">Telefone</label>
+            <input type="text" v-model="form.telefone" id="telefone" v-maska :data-maska="['(##) ####-####', '(##) #####-####']" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" :disabled="isLoading" placeholder="(11) 99999-1111">
+        </div>
+        <div class="flex items-center justify-end">
+            <button type="submit" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-6 rounded focus:outline-none focus:shadow-outline" :disabled="isLoading">
+                {{ isLoading ? 'Salvando...' : 'Salvar' }}
+            </button>
+        </div>
+    </form>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { useAssociadosStore } from '../store/associados';
+import { useRouter } from 'vue-router';
+import { createAssociado, getAssociadoById, updateAssociado, type Associado } from '../services/associadoService';
+import { AxiosError } from 'axios';
+import { vMaska } from 'maska/vue';
 
-const store = useAssociadosStore();
-const route = useRoute();
-const router = useRouter();
-
-const associadoId = computed(() => route.params.id as string | undefined);
-const isEditing = computed(() => !!associadoId.value);
-const pageTitle = computed(() => isEditing.value ? 'Editar Associado' : 'Adicionar Novo Associado');
-
-const form = ref({
-  nome_completo: '',
-  cpf: '',
-  email: '',
-  telefone: '',
+const props = defineProps({
+  id: String
 });
 
+const router = useRouter();
+const form = ref<Associado>({
+  nomeCompleto: '',
+  cpf: '',
+  email: '',
+  telefone: ''
+});
+
+const isLoading = ref(false);
+const errorMessage = ref<string | null>(null);
+
+const isEditing = computed(() => !!props.id);
+
 onMounted(async () => {
-  if (isEditing.value && associadoId.value) {
-    // Busca os dados do associado na 'API' se estiver a editar
-    const associado = await store.getAssociadoById(associadoId.value);
-    if (associado) {
-      form.value = { ...associado };
+  if (props.id) {
+    isLoading.value = true;
+    try {
+      const response = await getAssociadoById(props.id);
+      form.value = response.data;
+    } catch (error) {
+      console.error("Erro ao buscar dados do associado:", error);
+      errorMessage.value = "Não foi possível carregar os dados do associado.";
+    } finally {
+        isLoading.value = false;
     }
   }
 });
 
-async function handleSubmit() {
-  await store.saveAssociado(form.value, associadoId.value);
-  router.push({ name: 'Associados' });
-}
-</script>
+const handleSubmit = async () => {
+  isLoading.value = true;
+  errorMessage.value = null; // Limpa erros anteriores
 
-<style scoped>
-.input-style {
-  @apply px-4 py-2 border rounded-lg text-gray-700 focus:outline-none focus:border-blue-500;
-}
-</style>
+  try {
+    if (isEditing.value) {
+      await updateAssociado(props.id!, form.value);
+    } else {
+      await createAssociado(form.value);
+    }
+    router.push('/associados');
+  } catch (error) {
+    console.error("Erro ao salvar associado:", error);
+    if (error instanceof AxiosError && error.response) {
+        // Tenta extrair uma mensagem de erro mais amigável da resposta da API
+        const responseData = error.response.data;
+        if (responseData && responseData.message) {
+            errorMessage.value = responseData.message;
+        } else if (error.response.status === 400) {
+            errorMessage.value = "Dados inválidos. Verifique os campos e tente novamente.";
+        } else {
+            errorMessage.value = `Ocorreu um erro no servidor (código: ${error.response.status}).`;
+        }
+    } else {
+        errorMessage.value = "Não foi possível conectar ao servidor. Verifique sua conexão.";
+    }
+  } finally {
+    isLoading.value = false;
+  }
+};
+</script>

@@ -1,50 +1,39 @@
 <template>
-  <div class="p-8">
-    <h1 class="text-3xl font-bold text-gray-800 mb-6">Gestão de Associados</h1>
-    <div class="flex justify-between items-center mb-6">
+  <div>
+    <h1 class="text-2xl font-bold mb-6">Gestão de Associados</h1>
+    <div class="mb-4 flex justify-between">
       <input
-        v-model="associadosStore.searchTerm"
         type="text"
+        v-model="search"
+        @keyup.enter="fetchAssociados"
         placeholder="Buscar por nome ou CPF..."
-        class="w-1/3 px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
+        class="px-4 py-2 border rounded-md w-1/3"
       />
-      <router-link
-        :to="{ name: 'NovoAssociado' }"
-        class="bg-blue-800 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
-      >
+      <router-link to="/associados/novo" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
         + Adicionar Associado
       </router-link>
     </div>
 
     <div class="bg-white shadow-md rounded-lg overflow-hidden">
-      <table class="min-w-full leading-normal">
-        <thead>
-          <tr class="bg-gray-100 text-left text-gray-600 font-bold uppercase text-sm">
-            <th class="px-5 py-3">Nome Completo</th>
-            <th class="px-5 py-3">CPF</th>
-            <th class="px-5 py-3">E-mail</th>
-            <th class="px-5 py-3">Telefone</th>
-            <th class="px-5 py-3">Ações</th>
+      <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome Completo</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CPF</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">E-mail</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Telefone</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
           </tr>
         </thead>
-        <tbody class="text-gray-700">
-          <tr v-if="!associadosStore.filteredAssociados.length">
-              <td colspan="5" class="text-center py-10 text-gray-500">
-                  Nenhum associado encontrado.
-              </td>
-          </tr>
-          <tr v-for="associado in associadosStore.filteredAssociados" :key="associado.id" class="border-b border-gray-200 hover:bg-gray-50">
-            <td class="px-5 py-4">{{ associado.nome_completo }}</td>
-            <td class="px-5 py-4">{{ associado.cpf }}</td>
-            <td class="px-5 py-4">{{ associado.email }}</td>
-            <td class="px-5 py-4">{{ associado.telefone }}</td>
-            <td class="px-5 py-4">
-              <router-link
-                :to="{ name: 'EditarAssociado', params: { id: associado.id } }"
-                class="bg-gray-200 text-gray-700 font-bold py-1 px-3 rounded-lg text-xs hover:bg-gray-300"
-              >
-                Editar
-              </router-link>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <tr v-for="associado in associados" :key="associado.id">
+            <td class="px-6 py-4 whitespace-nowrap">{{ associado.nomeCompleto }}</td>
+            <td class="px-6 py-4 whitespace-nowrap">{{ associado.cpf }}</td>
+            <td class="px-6 py-4 whitespace-nowrap">{{ associado.email }}</td>
+            <td class="px-6 py-4 whitespace-nowrap">{{ associado.telefone }}</td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <router-link :to="`/associados/editar/${associado.id}`" class="text-indigo-600 hover:text-indigo-900">Editar</router-link>
+              <button @click="removeAssociado(associado.id!)" class="ml-4 text-red-600 hover:text-red-900">Excluir</button>
             </td>
           </tr>
         </tbody>
@@ -54,12 +43,31 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue';
-import { useAssociadosStore } from '../store/associados';
+import { ref, onMounted } from 'vue';
+import { getAssociados, deleteAssociado, type Associado } from '../services/associadoService';
 
-const associadosStore = useAssociadosStore();
+const associados = ref<Associado[]>([]);
+const search = ref('');
 
-onMounted(() => {
-  associadosStore.fetchAssociados();
-});
+const fetchAssociados = async () => {
+  try {
+    const response = await getAssociados(search.value);
+    associados.value = response.data;
+  } catch (error) {
+    console.error("Erro ao buscar associados:", error);
+  }
+};
+
+const removeAssociado = async (id: string) => {
+    if (confirm('Tem certeza que deseja excluir este associado?')) {
+        try {
+            await deleteAssociado(id);
+            fetchAssociados(); // Recarrega a lista
+        } catch (error) {
+            console.error("Erro ao excluir associado:", error);
+        }
+    }
+};
+
+onMounted(fetchAssociados);
 </script>
