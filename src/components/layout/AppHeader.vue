@@ -11,12 +11,14 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { keycloak } from '../../main';
+import { inject } from 'vue';
+import { keycloakKey } from '../../main';
 
 const userInfo = ref({ name: '' });
+const keycloak = inject(keycloakKey);
 
 onMounted(async () => {
-  if (keycloak.authenticated) {
+  if (keycloak && keycloak.authenticated) {
     try {
       const profile = await keycloak.loadUserProfile();
       userInfo.value.name = profile.firstName || profile.username || '';
@@ -27,6 +29,8 @@ onMounted(async () => {
 });
 
 const logout = () => {
-  keycloak.logout({ redirectUri: window.location.origin });
+  if (keycloak) {
+    keycloak.logout({ redirectUri: window.location.origin });
+  }
 };
 </script>
