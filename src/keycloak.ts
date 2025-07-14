@@ -3,7 +3,7 @@ import Keycloak from 'keycloak-js';
 // ✅ Configuração melhorada do Keycloak
 const keycloak = new Keycloak({
   url: 'http://localhost:8080',
-  realm: 'durval-crm', 
+  realm: 'durval-crm',
   clientId: 'durvalcrm-app'
 });
 
@@ -16,8 +16,9 @@ keycloak.onAuthSuccess = () => {
   console.log('Autenticação bem-sucedida');
 };
 
+// ✅ ALTERAÇÃO: Melhora o log para detalhar o objeto de erro
 keycloak.onAuthError = (error) => {
-  console.error('Erro de autenticação:', error);
+  console.error('Keycloak - Erro de autenticação detalhado:', error);
 };
 
 keycloak.onAuthRefreshSuccess = () => {

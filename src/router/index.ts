@@ -1,4 +1,3 @@
-// src/router/index.ts
 import { createRouter, createWebHistory } from 'vue-router';
 import Home from '../views/Home.vue';
 import Associados from '../views/Associados.vue';
@@ -17,21 +16,27 @@ const router = createRouter({
   routes
 });
 
-// Guarda de Navegação (Navigation Guard) Robusta
-router.beforeEach(async (to, from, next) => {
+// ✅ GUARDA DE ROTA FINAL E ESTÁVEL
+router.beforeEach((to, from, next) => {
+  // Se a rota não requer autenticação, permita o acesso.
   if (!to.meta.requiresAuth) {
     return next();
   }
 
-  if (keycloak && keycloak.authenticated) {
+  // Se a rota requer autenticação e o usuário está logado, permita o acesso.
+  if (keycloak.authenticated) {
     return next();
   }
-
-  try {
-    await keycloak.login({ redirectUri: window.location.origin + to.fullPath });
-  } catch (error) {
-    console.error("Falha ao tentar redirecionar para o login:", error);
-  }
+  
+  // Se a rota requer autenticação e o usuário NÃO está logado, inicie o processo de login.
+  console.log('Usuário não autenticado, redirecionando para o login...');
+  
+  // A URL de redirecionamento é a rota que o usuário tentou acessar.
+  const loginOptions = {
+    redirectUri: window.location.origin + to.fullPath
+  };
+  
+  keycloak.login(loginOptions);
 });
 
 export default router;
