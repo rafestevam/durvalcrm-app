@@ -1,32 +1,34 @@
-import { createApp } from 'vue'
-import { createPinia } from 'pinia'
-import App from './App.vue'
-import router from './router'
-import { keycloak, keycloakKey } from './keycloak' // Importando da versão corrigida
-import './assets/main.css'
+// src/main.ts
 
-const app = createApp(App)
+import { createApp } from 'vue';
+import { createPinia } from 'pinia';
+import App from './App.vue';
+import router from './router';
+import { keycloak, keycloakKey } from './keycloak';
+import './assets/main.css';
 
-const initializeApp = async () => {
-  try {
-    console.log("Tentando inicializar o Keycloak...");
-    const authenticated = await keycloak.init({
-      onLoad: 'login-required'
-    })
+console.log("Iniciando processo de autenticação...");
 
+// 1. Inicializa o Keycloak e DEIXA ELE TERMINAR PRIMEIRO.
+keycloak.init({ 
+    onLoad: 'check-sso', 
+    silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html' 
+})
+  .then((authenticated) => {
+    // 2. Este bloco .then() SÓ RODA DEPOIS que o Keycloak processou o redirecionamento
+    //    e a URL já está limpa.
     console.log(`Keycloak init concluído. Usuário autenticado: ${authenticated}`);
 
-    if (authenticated) {
-        app.provide(keycloakKey, keycloak)
-        app.use(createPinia())
-        app.use(router)
-        app.mount('#app')
-    }
+    // 3. Agora, com o Keycloak pronto, podemos iniciar o Vue com segurança.
+    const app = createApp(App);
 
-  } catch (error) {
-    console.error('Falha CRÍTICA ao inicializar o Keycloak. Verifique a conexão e a configuração de CORS no seu realm.', error)
-    document.body.innerHTML = '<h1>Erro ao conectar com o servidor de autenticação. Verifique o console do navegador para detalhes técnicos.</h1>';
-  }
-}
-
-initializeApp()
+    app.use(createPinia());
+    app.provide(keycloakKey, keycloak); // Fornece a instância do Keycloak para os componentes
+    app.use(router); // O router agora é iniciado com o status de autenticação correto
+    
+    app.mount('#app');
+  })
+  .catch((error) => {
+    console.error('Falha CRÍTICA na inicialização do Keycloak.', error);
+    document.body.innerHTML = '<h1>Erro crítico ao conectar com o servidor de autenticação. Verifique o console.</h1>';
+  });
