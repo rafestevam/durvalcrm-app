@@ -1,8 +1,30 @@
 <!DOCTYPE html>
 <html>
-  <body>
-    <script>
-      parent.postMessage(location.href, location.origin);
-    </script>
-  </body>
+<head>
+  <title>Keycloak Silent Check SSO</title>
+</head>
+<body>
+  <script src="https://cdn.jsdelivr.net/npm/keycloak-js@24.0.4/dist/keycloak.min.js"></script>
+  <script>
+    var keycloak = new Keycloak({
+        url: 'http://localhost:8080/',
+        realm: 'durval-crm',
+        clientId: 'durvalcrm-app'
+    });
+    
+    // ✅ CORREÇÃO: Adicione o pkceMethod aqui também
+    keycloak.init({
+      onLoad: 'check-sso',
+      pkceMethod: 'S256'
+    }).then(function (authenticated) {
+        if(authenticated) {
+            console.log('Silent check SSO success');
+        } else {
+            console.log('Silent check SSO failed');
+        }
+    }).catch(function () {
+        console.error('Silent check SSO error');
+    });
+  </script>
+</body>
 </html>
