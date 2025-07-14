@@ -14,9 +14,14 @@ const app = createApp(App);
 const initializeApp = async () => {
   try {
     // Usando a instância importada do keycloak
-    const authenticated = await keycloak.init({ 
-      onLoad: 'login-required' 
-    });
+      const authenticated = await keycloak.init({ 
+      onLoad: 'check-sso',
+      silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html',
+      enableLogging: true
+});
+    //const authenticated = await keycloak.init({ 
+    //  onLoad: 'login-required' 
+    //});
 
     console.log(`Usuário está ${authenticated ? 'autenticado' : 'não autenticado'}.`);
 
