@@ -1,43 +1,55 @@
+// src/main.ts
+
 import { createApp } from 'vue';
 import App from './App.vue';
-import router from './router';
-import keycloak from './keycloak'; // Importando a instância centralizada
-import './assets/main.css'; // Tailwind CSS
-import { vMaska } from 'maska/vue'; // Importando a diretiva Maska
+// NÃO importe o router aqui no topo ainda
+// import router from './router'; 
+import keycloak from './keycloak';
+import './assets/main.css';
+import { vMaska } from 'maska/vue';
 
-// Função de inicialização assíncrona
 const initializeApp = async () => {
   try {
-    // Inicializa o Keycloak. A opção 'login-required' força a autenticação
-    // antes de qualquer outra coisa ser carregada.
     const authenticated = await keycloak.init({
       onLoad: 'login-required',
-      pkceMethod: 'S256' // Essencial para a segurança do fluxo
+      flow: 'standard',
+      responseMode: 'query',
+      pkceMethod: 'S256',
+      // Garanta que o silent-check-sso.html está acessível publicamente
+      silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html'
     });
 
-    console.log(`Usuário ${authenticated ? 'autenticado' : 'não autenticado'}.`);
+    console.log(`Keycloak authenticated: ${authenticated}`);
 
-    // Se autenticado, monta a aplicação Vue
     if (authenticated) {
+      // 1. Somente após a autenticação, importe e crie o router.
+      const { default: router } = await import('./router');
+
+      // 2. Crie a instância do Vue.
       const app = createApp(App);
 
-      // Disponibiliza a instância do Keycloak para toda a aplicação
+      // 3. Forneça o Keycloak para toda a aplicação.
       app.provide('keycloak', keycloak);
 
-      // Usa os plugins
+      // 4. Use o router.
       app.use(router);
-      app.directive('maska', vMaska); // Registrando a diretiva Maska globalmente
+      
+      // 5. Registre diretivas ou outros plugins.
+      app.directive('maska', vMaska);
 
-      // Monta a aplicação
+      // 6. Monte a aplicação.
       app.mount('#app');
+    } else {
+      // Este `else` geralmente não será alcançado com `onLoad: 'login-required'`,
+      // mas é uma boa prática para depuração.
+      console.warn("Usuário não autenticado. A aplicação não será montada.");
+      document.body.innerHTML = '<h2>Você não está autorizado.</h2><p>Por favor, tente fazer o login novamente.</p>';
     }
 
   } catch (error) {
     console.error('Falha catastrófica ao inicializar o Keycloak:', error);
-    // Exibe uma mensagem de erro clara para o usuário final
-    document.body.innerHTML = '<div style="text-align: center; padding: 50px; font-family: sans-serif;"><h1>Erro de Autenticação</h1><p>Não foi possível conectar ao serviço de autenticação. Por favor, verifique se o Keycloak está em execução e tente novamente.</p></div>';
+    document.body.innerHTML = '<h2>Erro Crítico na Inicialização</h2><p>Não foi possível conectar ao sistema de autenticação. Por favor, contate o suporte.</p>';
   }
 };
 
-// Inicia o processo
 initializeApp();
