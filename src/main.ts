@@ -19,16 +19,9 @@ const initializeApp = async () => {
       silentCheckSsoRedirectUri: window.location.origin + '/silent-check-sso.html',
       enableLogging: true
 });
-    //const authenticated = await keycloak.init({ 
-    //  onLoad: 'login-required' 
-    //});
 
     console.log(`Usuário está ${authenticated ? 'autenticado' : 'não autenticado'}.`);
 
-    // O serviço 'api.ts' já importa o 'keycloak' e configura os interceptors automaticamente.
-    // Portanto, a chamada para setupAxiosInterceptor() não é necessária.
-
-    // Fornecendo a mesma instância para toda a aplicação Vue
     app.provide(keycloakKey, keycloak);
     app.use(createPinia());
     app.use(router);
