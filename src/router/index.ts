@@ -3,7 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import Home from '../views/Home.vue';
 import Associados from '../views/Associados.vue';
 import AssociadoForm from '../views/AssociadoForm.vue';
-import { keycloak } from '../keycloak';
+import keycloak from '../keycloak';
 
 const routes = [
   { path: '/', name: 'Home', component: Home, meta: { requiresAuth: true } },

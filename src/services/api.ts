@@ -1,9 +1,9 @@
 // src/services/api.ts
 import axios, { type AxiosInstance } from 'axios'
-import { keycloak } from '../keycloak'
+import keycloak from '../keycloak'
 
 const apiClient: AxiosInstance = axios.create({
-  baseURL: 'http://localhost:8081',
+  baseURL: 'http://localhost:8082',
   headers: {
     'Content-Type': 'application/json'
   }

@@ -1,3 +1,15 @@
+import Keycloak from 'keycloak-js';
+
+// Corrigido: 'durval-crm' com hífen, conforme a configuração do servidor.
+const keycloak = new Keycloak({
+  url: 'http://localhost:8080',
+  realm: 'durval-crm', 
+  clientId: 'durvalcrm-app'
+});
+
+export default keycloak;
+
+/*
 import { type InjectionKey } from 'vue'
 import Keycloak from 'keycloak-js'
 
@@ -13,3 +25,4 @@ const keycloakConfig = {
 
 // A instância do Keycloak é criada e exportada a partir de um único local
 export const keycloak = new Keycloak(keycloakConfig)
+*/

@@ -12,10 +12,10 @@
 <script setup lang="ts">
 import { ref, onMounted, inject } from 'vue';
 import type { KeycloakProfile } from 'keycloak-js';
-import { keycloakKey } from '../../keycloak'; // Atualizado para o novo arquivo
+import keycloak from '../../keycloak'; // Atualizado para o novo arquivo
 
 const userInfo = ref({ name: '' });
-const keycloak = inject(keycloakKey);
+//const keycloak = inject(keycloakKey);
 
 onMounted(async () => {
   if (keycloak && keycloak.authenticated) {
